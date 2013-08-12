@@ -1,0 +1,76 @@
+{% extends "base.tmpl.html" %}
+{% block body %}
+<div class="row-fluid">
+  <h1 class="span9">Available Access Points</h1>
+  <div class="frequency-selector span3">
+    <span>Polling Frequency:</span>
+    <div id="period-selector" class="btn-group" data-toggle="buttons-radio">
+      <button class="btn" data-value="5">5s</button>
+      <button class="btn" data-value="10">10s</button>
+      <button class="btn" data-value="30">30s</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="row-fluid">
+    <div class="span9">
+      <ul id="ap-list"></ul>
+    </div>
+    <div class="span3 well">
+      <p>
+        The only solution I found to reliably get information about the
+        available Wi-Fi Access points involved using NetworkManager's
+        service from freedesktop.org.
+      </p>
+      <p>
+        It exposes information about wireless APs through
+        D-Bus. Instead of a regular django model to store data, I
+        created classes that facilitate the interface with D-Bus
+        according to model of the application, and then use these
+        classes to query D-Bus and obtain data.
+      </p>
+      <p>
+        Use the selector above to define the frequency that the ajax
+        requests are made to update the list.
+      </p>
+    </div>
+</div>
+
+
+<script>
+  $(document).ready(function(){
+      var period_selector = $("#period-selector");
+      var period;
+
+      $(period_selector).button();
+      $(period_selector).children("button").click(function(){
+          period = parseInt($(this).data("value"));
+      });
+      $(period_selector).children("button:first").click();
+
+      var updateList = function(){
+          $.getJSON("{% url 'access_point_data' %}", function(response){
+              var ap_list_node = $("#ap-list");
+              ap_list_node.empty();
+              if (_.isEmpty(response)){
+                  var msg = "No wireless networks found.";
+                  $("<li>").addClass("empty").text(msg).appendTo(ap_list_node);
+                  return;
+              }
+
+              _.each(response, function(ap){
+                  ap_list_node.append($("<li>").text(ap.ssid));
+              });
+          });
+      };
+
+      var cycle = function(){
+          updateList();
+          setTimeout(cycle, 1000 * period);
+      };
+      cycle();
+  })
+</script>
+
+{% endblock %}

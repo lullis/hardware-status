@@ -1,0 +1,37 @@
+{% extends "base.tmpl.html" %}
+
+{% block body %}
+<div class="row-fluid">
+  <div class="span9">
+    <h1>Battery Monitor</h1>
+    <p>We could gather information about the following battery(ies):</p>
+    <ul>
+  {% for battery in battery_list %}
+    <li><a href="{% url "battery_detail" battery.slug %}">{{ battery.name }}</a></li>
+  {% endfor %}
+    </ul>
+  </div>
+  
+  <div class="span3 well">
+    <p>
+      To obtain the list of batteries, I wrote a couple of functions
+      that navigate through sysfs to obtain information about the
+      power supplies and batteries from the system. There I could
+      obtain information about the battery: name, manufacturer,
+      current state, nominal capacity, current capacity, etc
+    </p>
+
+    <p>
+      Unfortunately, the ACPI drivers for my laptop do not implement
+      the function that provide more information, so trying to come up
+      with a reliable way to estimate the rate of charge/discharge
+      would require some mocking of these functions and another, so
+      the exercise was not done for a simple demonstration. However, I
+      did implement a naive algorithm that just checks for the
+      capacity in the past two readings, and then use those readings to see how
+      long it would take to drain the whole battery.
+    </p>
+
+  </div>
+</div>
+{% endblock %}

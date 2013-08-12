@@ -1,0 +1,11 @@
+syntax: glob
+*.pyc
+*.pyo
+*.mo
+*.db
+bin
+include
+local
+lib
+src/local_settings.*
+static

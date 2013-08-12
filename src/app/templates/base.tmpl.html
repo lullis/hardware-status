@@ -1,0 +1,37 @@
+{% load staticfiles %}
+<HTML>
+  <head>
+
+    <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
+    <link href='{% static "css/main.css" %}' rel="stylesheet">
+
+
+    <script src="//code.jquery.com/jquery.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.1/underscore-min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/js/bootstrap.min.js"></script>
+    <title>{% block title %}Device Monitoring{% endblock %}</title>
+  </head>
+  <body>
+    {% block header %}
+      <div class="navbar">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="brand" href='{% url "index" %}'>Hardware Manager</a>
+          <div class="nav-collapse collapse">
+            <p class="navbar-text pull-right">Raphael Lullis</p>
+            <ul class="nav">
+              <li><a href='{% url "battery_list" %}'>Battery Monitor</a></li>
+              <li><a href='{% url "access_point_list" %}'>Available Wi-fi Networks</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endblock %}
+  {% block container %}
+    <div class="container-fluid">
+      {% block body %}{% endblock %}
+    </div>
+  {% endblock %}
+  </body>
+</HTML>

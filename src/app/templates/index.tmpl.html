@@ -1,0 +1,28 @@
+{% extends "base.tmpl.html" %}
+
+{% block body %}
+<div class="row-fluid">
+  <div class="span3 well">
+    <ul>
+      <li><a href='{% url "battery_list" %}'>Battery View</a></li>
+      <li><a href='{% url "access_point_list" %}'>Access Points View</a></li>
+    </ul>
+  </div>
+  <div class="span9 hero-unit">
+      <p>
+        Welcome to the hardware manager.
+      </p>
+      <p>
+        If you are reading this, it means that you successfully run
+        the application. It assumes you are running a
+        Ubuntu/Debian-based operating system on a laptop with at least
+        one wlan interface and one battery as the power supply.
+      </p>
+      <p>
+        Check the links on the top or on the left to see information
+        about the current status of your computer devices.
+      </p>
+    </div>
+</div>
+
+{% endblock %}

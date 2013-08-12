@@ -1,0 +1,99 @@
+{% extends "base.tmpl.html" %}
+
+{% block body %}
+
+<div class="row-fluid">
+  <h1 class="battery-name span9">{{ battery.name }}</h1>
+  <div class="frequency-selector span3">
+    <span>Polling Frequency:</span>
+    <div id="period-selector" class="btn-group" data-toggle="buttons-radio">
+      <button class="btn" data-value="10">10s</button>
+      <button class="btn" data-value="60">1m</button>
+      <button class="btn" data-value="300">5m</button>
+      <button class="btn" data-value="600">10m</button>
+    </div>
+  </div>
+</div>
+<div class="hero-unit">
+  <div class="row-fluid">
+    <div class="span9">
+      <ul id="{{ battery.slug }}" class="battery-info">
+        <li>
+          <span>Technology: {{ battery.technology }}</span>
+        </li>
+        <li>
+          <span>Capacity (Nominal): {{ battery.design_capacity_mah }}</span>
+        </li>
+        <li>
+          <span>Capacity (Reported Max): {{ battery.max_capacity_mah }}</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="span3">
+      <span class="battery-charge">
+        <span class="charge-value">{{ battery.percentage_charge }}</span>%
+      </span>
+
+      <div class="progress progress-{{ battery.charge_criticality_message }}">
+        <div class="bar charge-value" style="width: {{ battery.percentage_charge }}%"></div>
+      </div>
+
+      <span class="battery-status {{ battery.status }}">
+        {{ battery.status }}
+      </span>
+
+      <span class="battery-time">
+        {{ battery.remaining_time.hours }}h{{ battery.remaining_time.minutes}}
+      </span>
+
+
+    </div>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function(){
+      var period_selector = $("#period-selector");
+      var period;
+
+      $(period_selector).button();
+      $(period_selector).children("button").click(function(){
+          period = parseInt($(this).data("value"));
+      });
+      $(period_selector).children("button:first").click();
+
+      var updatePanel = function(){
+          $.getJSON("{% url 'battery_data' battery.slug %}", function(response){
+              var charge = response.charge_pct;
+              var message = response.criticality_message;
+              var status = response.status;
+              var hours = response.remaining_time && response.remaining_time.hours;
+              var minutes = response.remaining_time && response.remaining_time.minutes;
+              $("span.battery-charge span.charge-value").html(charge.toString());
+              $("div.progress div.bar").width(charge + "%");
+              $("div.progress")
+                  .removeClass("progress-info progress-danger")
+                  .removeClass("progress-success progress-warning")
+                  .addClass("progress-" + message);
+              $("span.battery-status")
+                  .removeClass("full charging discharging")
+                  .addClass(status).text(status);
+              if (hours || minutes){
+                  var msg = "Estimated time: " + hours + "h" + minutes + "min";
+                  $("span.battery-time").text(msg).show();
+              }
+              else {
+                  $("span.battery-time").hide().empty();
+              }
+          });
+      };
+
+      var cycle = function(){
+          updatePanel();
+          setTimeout(cycle, 1000 * period);
+      };
+      cycle();
+  })
+</script>
+{% endblock %}
