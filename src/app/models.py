@@ -59,7 +59,7 @@ class Battery(models.Model):
 
     @property
     def percentage_charge(self):
-        return int(100*self.current_capacity/float(self.max_capacity))
+        return int(100 * self.current_capacity / float(self.max_capacity))
 
     @property
     def charge_criticality_message(self):
@@ -77,7 +77,7 @@ class Battery(models.Model):
         rate = self._get_acpi_reported_rate() or self._get_sysfs_reported_rate()
         if not rate: return None
 
-        return (self.current_capacity)/rate
+        return (self.current_capacity) / rate
 
     def _get_sysfs_reported_rate(self):
         # Only calculate time when it's discharging. Charging or full returns None
@@ -99,7 +99,7 @@ class Battery(models.Model):
         if delta_charge == 0: return None
 
         delta_time = (latest.timestamp - earliest.timestamp).seconds
-        return abs(int(delta_charge/delta_time))
+        return abs(int(delta_charge / delta_time))
 
     def _get_acpi_reported_rate(self):
         filename = '/proc/acpi/battery/%s/state' % self.slug
@@ -108,7 +108,7 @@ class Battery(models.Model):
             rate_line = [line for line in state.split('\n') if line.startswith('present rate:')]
             # there is a line in the format 'present rate: \d mW' Let's get the power.
             if rate_line:
-                return int(int(rate_line[0].rstrip(' mW').split()[-1])/3.6)
+                return int(int(rate_line[0].rstrip(' mW').split()[-1]) / 3.6)
 
         return None
 
@@ -143,8 +143,8 @@ class Battery(models.Model):
         if capacity:
             return BatteryReading.objects.create(
                 battery=self,
-                capacity = capacity,
-                status = slugify(self.read_attribute('status'))
+                capacity=capacity,
+                status=slugify(self.read_attribute('status'))
             )
         return None
 
@@ -153,8 +153,10 @@ class Battery(models.Model):
         Battery.objects.all().delete()
         batteries = []
         power_supply_dir = '/sys/class/power_supply/'
-        power_supplies = [ps for ps in os.listdir(power_supply_dir)
-            if os.path.isdir(os.path.join(power_supply_dir, ps))]
+        power_supplies = [
+            ps for ps in os.listdir(power_supply_dir)
+            if os.path.isdir(os.path.join(power_supply_dir, ps))
+            ]
 
         for ps in power_supplies:
             battery = Battery()
