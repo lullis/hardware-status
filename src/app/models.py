@@ -79,7 +79,6 @@ class Battery(models.Model):
 
         return (self.current_capacity)/rate
 
-
     def _get_sysfs_reported_rate(self):
         # Only calculate time when it's discharging. Charging or full returns None
         readings = self.batteryreading_set.all()
@@ -109,7 +108,7 @@ class Battery(models.Model):
             rate_line = [line for line in state.split('\n') if line.startswith('present rate:')]
             # there is a line in the format 'present rate: \d mW' Let's get the power.
             if rate_line:
-                return int(rate_line[0].rstrip(' mW').split()[-1])
+                return int(int(rate_line[0].rstrip(' mW').split()[-1])/3.6)
 
         return None
 
