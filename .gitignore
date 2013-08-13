@@ -9,3 +9,4 @@ local
 lib
 src/local_settings.*
 static
+!src/**/static

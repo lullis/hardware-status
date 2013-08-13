@@ -1,0 +1,16 @@
+span.battery-charge {
+    font-size: 72px;
+    line-height: 72px;
+    text-align: right;
+    margin: 0 auto;   
+    display: block;
+}
+
+span.battery-status, span.battery-time{
+    display: block;
+    text-align: right;
+}
+
+div.frequency-selector{
+    text-align: right;
+}
