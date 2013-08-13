@@ -1,3 +1,5 @@
+Tested only on Ubuntu 12.04 LTS, 64 bits.
+
 To run/install:
 
   1. Clone this repository: `git clone ssh://github.com/lullis/hardware-status`
