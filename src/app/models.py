@@ -74,6 +74,13 @@ class Battery(models.Model):
 
     @property
     def remaining_time(self):
+        rate = self._get_acpi_reported_rate() or self._get_sysfs_reported_rate()
+        if not rate: return None
+
+        return (self.current_capacity)/rate
+
+
+    def _get_sysfs_reported_rate(self):
         # Only calculate time when it's discharging. Charging or full returns None
         readings = self.batteryreading_set.all()
         try:
@@ -93,31 +100,54 @@ class Battery(models.Model):
         if delta_charge == 0: return None
 
         delta_time = (latest.timestamp - earliest.timestamp).seconds
-        return abs(int(self.max_capacity/delta_charge) * delta_time)
+        return abs(int(delta_charge/delta_time))
 
+    def _get_acpi_reported_rate(self):
+        filename = '/proc/acpi/battery/%s/state' % self.slug
+        with open(filename) as f:
+            state = f.read()
+            rate_line = [line for line in state.split('\n') if line.startswith('present rate:')]
+            # there is a line in the format 'present rate: \d mW' Let's get the power.
+            if rate_line:
+                return int(rate_line[0].rstrip(' mW').split()[-1])
+
+        return None
+
+    def _get_current_capacity(self):
+        capacity = self.read_attribute('charge_now') or self.read_attribute('energy_now')
+        return capacity and int(capacity) or None
 
     def read_attribute(self, attr):
         filename = '/sys/class/power_supply/%s/%s' % (self.slug, attr)
+        if not os.path.exists(filename): return None
+
         with open(filename) as f:
             return f.read().strip()
 
     def sync(self):
-        manufacturer = self.read_attribute('manufacturer')
-        model_name = self.read_attribute('model_name')
-        self.name = '%s - %s' % (manufacturer, model_name)
+        manufacturer = self.read_attribute('manufacturer').strip()
+        model_name = self.read_attribute('model_name').strip()
+        design_capacity = self.read_attribute('charge_full_design') or self.read_attribute('energy_full_design')
+        max_capacity = self.read_attribute('charge_full') or self.read_attribute('energy_full')
+        current_capacity = self._get_current_capacity()
+
+        self.name = ' - '.join([manufacturer, model_name])
         self.technology = self.read_attribute('technology')
-        self.design_capacity = int(self.read_attribute('charge_full_design'))
-        self.max_capacity = int(self.read_attribute('charge_full'))
-        self.current_capacity = int(self.read_attribute('charge_now'))
+        if design_capacity: self.design_capacity = int(design_capacity)
+        if max_capacity: self.max_capacity = int(max_capacity)
+        if current_capacity: self.current_capacity = current_capacity
         self.status = slugify(self.read_attribute('status'))
         self.save()
 
     def make_reading(self):
-        return BatteryReading.objects.create(
-            battery=self,
-            capacity = int(self.read_attribute('charge_now')),
-            status = slugify(self.read_attribute('status'))
+        capacity = self._get_current_capacity()
+        if capacity:
+            return BatteryReading.objects.create(
+                battery=self,
+                capacity = capacity,
+                status = slugify(self.read_attribute('status'))
             )
+        return None
 
     @staticmethod
     def get_all():
@@ -184,6 +214,7 @@ class Device(object):
 
     def get_access_point_paths(self):
         interface = dbus.Interface(self.proxy, self.__class__.NAMESPACE)
+        if not self.is_wireless(): return []
         return interface.GetAccessPoints()
 
     def get_properties(self):
@@ -217,8 +248,9 @@ class AccessPoint(object):
         manager = NetworkManager()
         wireless_devices = [d for d in manager.get_devices() if d.is_wireless()]
         access_points = []
+
         for device in wireless_devices:
-            for ap in d.get_access_point_paths():
+            for ap in device.get_access_point_paths():
                 access_points.append(manager.make_access_point(ap))
 
         return access_points
