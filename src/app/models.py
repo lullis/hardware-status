@@ -105,7 +105,8 @@ class Battery(models.Model):
         filename = '/proc/acpi/battery/%s/state' % self.slug
         with open(filename) as f:
             state = f.read()
-            rate_line = [line for line in state.split('\n') if line.startswith('present rate:')]
+            rate_line = [line for line in state.split('\n')
+                         if line.startswith('present rate:') and line.endswith(' mW')]
             # there is a line in the format 'present rate: \d mW' Let's get the power.
             if rate_line:
                 return int(int(rate_line[0].rstrip(' mW').split()[-1]) / 3.6)
