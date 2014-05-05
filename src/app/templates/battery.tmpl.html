@@ -22,17 +22,17 @@
           <span>Technology: {{ battery.technology }}</span>
         </li>
         <li>
-          <span>Capacity (Nominal): {{ battery.design_capacity_mah }}</span>
+          <span>Capacity (Nominal): {{ battery.EnergyFullDesign }} Wh</span>
         </li>
         <li>
-          <span>Capacity (Reported Max): {{ battery.max_capacity_mah }}</span>
+          <span>Capacity (Reported Max): {{ battery.EnergyFull|floatformat }} Wh</span>
         </li>
       </ul>
     </div>
 
     <div class="span3">
       <span class="battery-charge">
-        <span class="charge-value">{{ battery.percentage_charge }}</span>%
+        <span class="charge-value">{{ battery.percentage_charge|floatformat }}</span>%
       </span>
 
       <div class="progress progress-{{ battery.charge_criticality_message }}">
@@ -43,10 +43,11 @@
         {{ battery.status }}
       </span>
 
-      <span class="battery-time">
-        {{ battery.remaining_time.hours }}h{{ battery.remaining_time.minutes}}
-      </span>
-
+      {% if battery.remaining_time %}
+        <span class="battery-time">
+          {{ battery.remaining_time.hours }}h {{ battery.remaining_time.minutes}}m
+        </span>
+      {% endif %}
 
     </div>
   </div>
@@ -64,13 +65,13 @@
       $(period_selector).children("button:first").click();
 
       var updatePanel = function(){
-          $.getJSON("{% url 'battery_data' battery.slug %}", function(response){
-              var charge = response.charge_pct;
+          $.getJSON("{% url 'api-power-source' slug=battery.slug %}", function(response){
+              var charge = parseFloat(response.percentage);
               var message = response.criticality_message;
               var status = response.status;
               var hours = response.remaining_time && response.remaining_time.hours;
               var minutes = response.remaining_time && response.remaining_time.minutes;
-              $("span.battery-charge span.charge-value").html(charge.toString());
+              $("span.battery-charge span.charge-value").html((parseInt(100*charge)/100).toString());
               $("div.progress div.bar").width(charge + "%");
               $("div.progress")
                   .removeClass("progress-info progress-danger")

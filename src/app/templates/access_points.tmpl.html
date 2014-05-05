@@ -50,7 +50,7 @@
       $(period_selector).children("button:first").click();
 
       var updateList = function(){
-          $.getJSON("{% url 'access_point_data' %}", function(response){
+          $.getJSON("{% url 'api-access-points' %}", function(response){
               var ap_list_node = $("#ap-list");
               ap_list_node.empty();
               if (_.isEmpty(response)){
@@ -60,7 +60,7 @@
               }
 
               _.each(response, function(ap){
-                  ap_list_node.append($("<li>").text(ap.ssid));
+                  ap_list_node.append($("<li>").text(ap.SSID));
               });
           });
       };

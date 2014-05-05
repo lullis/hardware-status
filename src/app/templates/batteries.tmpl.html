@@ -7,7 +7,7 @@
     <p>We could gather information about the following battery(ies):</p>
     <ul>
   {% for battery in battery_list %}
-    <li><a href="{% url "battery_detail" battery.slug %}">{{ battery.name }}</a></li>
+    <li><a href="{% url "battery-detail" slug=battery.slug %}">{{ battery.name }}</a></li>
   {% endfor %}
     </ul>
   </div>

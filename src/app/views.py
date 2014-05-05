@@ -1,58 +1,68 @@
 #!/usr/bin/env python
 
-import json
-
-from django.http import HttpResponse
-from django.views.generic import TemplateView, DetailView, ListView
+from django.views.generic.list import ListView
+from django.views.generic import TemplateView, DetailView
+from django.http import Http404
+from rest_framework import generics
 
 import models
+import serializers
 
 
 class IndexView(TemplateView):
     template_name = 'index.tmpl.html'
 
 
-class BatteryListView(ListView):
-    template_name = 'batteries.tmpl.html'
-    model = models.Battery
-
-    def dispatch(self, *args, **kw):
-        models.Battery.get_all()
-        return super(BatteryListView, self).dispatch(*args, **kw)
-
-
-class BatteryView(DetailView):
+class BatteryDetailView(DetailView):
     template_name = 'battery.tmpl.html'
-    model = models.Battery
+    context_object_name = 'battery'
+
+    def get_object(self, queryset=None):
+        batteries = [s for s in models.PowerSource.get_all()
+                     if s.is_battery and s.slug==self.kwargs.get('slug')]
+        if not batteries: raise Http404
+        return batteries.pop()
 
 
-class AccessPointListView(TemplateView):
+class PowerSourcePageView(ListView):
+    template_name = 'batteries.tmpl.html'
+
+    def get_queryset(self, *args, **kw):
+        return [source for source in models.PowerSource.get_all() if source.is_battery]
+
+    def get_context_data(self, **kwargs):
+        context = super(PowerSourcePageView, self).get_context_data(**kwargs)
+        context['battery_list'] = [s for s in models.PowerSource.get_all() if s.is_battery]
+        return context
+
+
+class AccessPointPageView(TemplateView):
     template_name = 'access_points.tmpl.html'
 
 
-def access_points(request):
-    return HttpResponse(json.dumps([{
-        'ssid': ap.ssid
-        } for ap in models.AccessPoint.get_all()]))
+class AccessPointListView(generics.ListAPIView):
+    serializer_class = serializers.AccessPointSerializer
+
+    def get_queryset(self, *args, **kw):
+        return models.AccessPoint.get_all()
 
 
-def battery_data(request, slug):
-    battery, created = models.Battery.objects.get_or_create(slug=slug)
-    battery.sync()
-    battery.make_reading()
-    remaining_time = battery.remaining_time
-    data = {
-        'charge_pct': battery.percentage_charge,
-        'status': battery.status,
-        'criticality_message': battery.charge_criticality_message
-        }
-    
-    if remaining_time:
-        remaining_minutes = remaining_time/60
-        remaining_hours = remaining_minutes/60
-        
-    data['remaining_time'] = remaining_time and {
-        'hours': remaining_hours,
-        'minutes': '%02d' % (remaining_minutes % 60)
-        }
-    return HttpResponse(json.dumps(data))
+class PowerSourceListView(generics.ListAPIView):
+    serializer_class = serializers.PowerSourceSerializer
+
+    def get_queryset(self, *args, **kw):
+        return models.PowerSource.get_all()
+
+
+class PowerSourceView(generics.RetrieveAPIView):
+    serializer_class = serializers.PowerSourceSerializer
+
+    def get_object(self, *args, **kw):
+        source = models.PowerSource.get(id=self.kwargs.get('slug'))
+        if source is None: raise Http404
+        return source
+
+
+class BatteryListView(PowerSourceListView):
+    def get_queryset(self, *args, **kw):
+        return [source for source in models.PowerSource.get_all() if source.is_battery]
